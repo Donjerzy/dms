@@ -22,7 +22,7 @@ if __name__ == '__main__':
                 print(f'Are you happy with {sheet_column} - {db_column} mapping?')
                 happy:str = input('Enter Y anything else for no ')
                 if happy.lower() == 'y':
-                    excel_db_column_mapping[excel_db_column_mapping.get(sheet_column, sheet_column)] = db_column
+                    excel_db_column_mapping[sheet_column] = db_column
                 else:
                     print('Values entered have been disregarded')
                 print('Do you want to continue column mapping?')
