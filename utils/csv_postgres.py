@@ -15,7 +15,6 @@ class csv_to_postgres:
         # Display the columns in the CSV file
         print("Columns in CSV file:", df.columns)
 
-
         # Display file contents
         # print("File Contents:", df)
 
