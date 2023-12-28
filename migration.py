@@ -1,13 +1,18 @@
 from utils.csv_postgres import csv_to_postgres
 
 
-def is_valid_csv(path):
-    if len(path) < 4:
+def is_valid_csv(csv_file_path):
+    if len(csv_file_path) < 5:
         return False
-    file_extension = path[-4:-1]
+    file_extension = csv_file_path[-4:]
     if file_extension != '.csv':
         return False
-    return False
+    try:
+        file = open(csv_file_path)
+        file.close()        
+    except:
+        return False
+    return True
 
 
 if __name__ == '__main__':
@@ -29,22 +34,24 @@ if __name__ == '__main__':
             column_mapping_in_progress = True
             while column_mapping_in_progress:
                 sheet_column:str = input('Excel Sheet Column Name: ')
-                db_column:str = input(f'Postgres Table Column Name for {sheet_column} = ')
+                db_column:str = input(f'Postgres Table Column Name for {sheet_column}: ')
                 print(f'Are you happy with {sheet_column} - {db_column} mapping?')
-                happy:str = input('Enter Y anything else for no ')
+                happy:str = input('Enter Y for yes anything else for no: ')
                 if happy.lower() == 'y':
                     excel_db_column_mapping[sheet_column] = db_column
                 else:
                     print('Values entered have been disregarded')
                 print('Do you want to continue column mapping?')
-                continue_mapping: str = input('Enter Y anything else for no ')
+                continue_mapping: str = input('Enter Y for yes anything else for no: ')
                 column_mapping_in_progress = True if continue_mapping.lower() == 'y' else False
             print('The final mapping is:', excel_db_column_mapping)
             print('Enter the file path')
             incorrect_path = True
             while incorrect_path:
-                csv_path: str = input('Paste in/ Enter the path to the csv file')
-                if is_valid_csv(csv_path):
+                print('Paste in/ Enter the path to the csv file')
+                print('The format should be like: C:\\\\file.csv')
+                csv_path: str = input('Paste in/ Enter the path to the csv file: ')
+                if is_valid_csv(csv_path.strip()):
                     incorrect_path = False
                     break
                 else:
