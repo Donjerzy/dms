@@ -1,18 +1,5 @@
 from utils.csv_postgres import csv_to_postgres
-
-
-def is_valid_csv(csv_file_path):
-    if len(csv_file_path) < 5:
-        return False
-    file_extension = csv_file_path[-4:]
-    if file_extension != '.csv':
-        return False
-    try:
-        file = open(csv_file_path)
-        file.close()        
-    except:
-        return False
-    return True
+from sqlalchemy import create_engine
 
 
 if __name__ == '__main__':
@@ -51,11 +38,41 @@ if __name__ == '__main__':
                 print('Paste in/ Enter the path to the csv file')
                 print('The format should be like: C:\\\\file.csv')
                 csv_path: str = input('Paste in/ Enter the path to the csv file: ')
-                if is_valid_csv(csv_path.strip()):
+                if csv_to_postgres.is_valid_csv(csv_path.strip()):
                     incorrect_path = False
                     break
                 else:
                     print(f'{csv_path} is an invalid path')
+            incorrect_connection_string = True
+            while incorrect_connection_string:
+                db_host = input('Enter the database host: ')
+                db_username = input('Enter the database username: ')
+                db_password = input('Enter the database password: ')
+                db_name = input('Enter the database name: ')
+                invalid_port = True
+                while invalid_port:
+                    try:
+                        db_port = int(input('Enter the database port: '))
+                        invalid_port = False
+                        break
+                    except ValueError:
+                        print('The port number entered is invalid')     
+                is_valid_connection_string, connection_string, connection_error_thrown \
+                    = csv_to_postgres.test_connection_to_postgres_db({ 'host': f'{db_host}', 'u_name': f'{db_username}', 'pass': f'{db_password}','db_name': f'{db_name}', 'port': f'{db_port}'})
+                if (is_valid_connection_string):
+                    incorrect_connection_string = False
+                    break
+                else:
+                    print(f'The connection was not made due to error {connection_error_thrown}')
+            database_table = input('Enter the name of the database table: ')
+            schema:str = input('Enter the target schema, if nothing is entered public will be the default schema: ')
+            csv_to_postgres.csv_to_postgres_append(
+                csv_file_path = csv_path.strip(),
+                db_connection_string = connection_string,
+                mapping = excel_db_column_mapping,
+                database_table = database_table ,
+                schema = schema if len(schema) >= 1 and schema.strip() != '' else 'public' 
+            )
         case _:
             print("Yaay, I didn't have to do anything")	
 
