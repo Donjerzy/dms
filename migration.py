@@ -36,13 +36,13 @@ if __name__ == '__main__':
             csv_path = csv_postgres_util.get_csv_file_path()
             connection_string = csv_postgres_util.get_db_connection_string()
             database_table = input('Enter the name of the database table: ')
-            schema:str = input('Enter the target schema, if nothing is entered public will be the default schema: ')
+            schema: str = input('Enter the target schema, if nothing is entered public will be the default schema: ')
             csv_postgres_util.csv_to_postgres_append(
-                csv_file_path = csv_path.strip(),
-                db_connection_string = connection_string,
-                mapping = excel_db_column_mapping,
-                database_table = database_table ,
-                schema = schema if len(schema) >= 1 and schema.strip() != '' else 'public' 
+                csv_file_path=csv_path.strip(),
+                db_connection_string=connection_string,
+                mapping=excel_db_column_mapping,
+                database_table=database_table,
+                schema=schema if len(schema) >= 1 and schema.strip() != '' else 'public'
             )
         case 2:
             csv_postgres_util = csv_to_postgres()
@@ -51,9 +51,8 @@ if __name__ == '__main__':
             print('Ensure search value is the left colum and update value is the second column')
             csv_path = csv_postgres_util.get_csv_file_path().strip()
             connection_string = csv_postgres_util.get_db_connection_string()
-            print(f'The connection string is {connection_string}')
             database_table = input('Enter the name of the database table: ')
-            schema:str = input('Enter the target schema, if nothing is entered public will be the default schema: ')
+            schema: str = input('Enter the target schema, if nothing is entered public will be the default schema: ')
             csv_postgres_util.csv_to_postgres_update_one_column(
                 db_connection_string=connection_string,
                 csv_file_path=csv_path,

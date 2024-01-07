@@ -3,6 +3,9 @@ from sqlalchemy import create_engine, Column, String, Integer, update
 from sqlalchemy.orm import DeclarativeBase
 
 
+class Base(DeclarativeBase):
+    pass
+
 class csv_to_postgres:
 
     # TODO: Self to initialize DB Connection String
@@ -25,7 +28,8 @@ class csv_to_postgres:
         return csv_path
 
     def get_db_connection_string(self):
-        incorrect_connection_string = True
+        connection_string = ''
+        incorrect_connection_string: bool = True
         while incorrect_connection_string:
             db_host = input('Enter the database host: ')
             db_username = input('Enter the database username: ')
@@ -41,11 +45,11 @@ class csv_to_postgres:
                 except ValueError:
                     print('The port number entered is invalid')
             is_valid_connection_string, connection_string, connection_error_thrown \
-                = csv_to_postgres.test_connection_to_postgres_db(
-                {'host': f'{db_host}', 'u_name': f'{db_username}', 'pass': f'{db_password}', 'db_name': f'{db_name}',
+                = self.test_connection_to_postgres_db(
+                {'host': f'{db_host}', 'u_name': f'{db_username}', 'pass': f'{db_password}',
+                 'db_name': f'{db_name}',
                  'port': f'{db_port}'})
-            if (is_valid_connection_string):
-                incorrect_connection_string = False
+            if is_valid_connection_string:
                 break
             else:
                 print(f'The connection was not made due to error {connection_error_thrown}')
@@ -71,8 +75,8 @@ class csv_to_postgres:
             connection = engine.connect()
             connection.close()
         except Exception as e:
-            return (False, postgres_db_conn_str, e)
-        return (True, postgres_db_conn_str, None)
+            return False, postgres_db_conn_str, e
+        return True, postgres_db_conn_str, None
 
     def csv_to_postgres_append(self, csv_file_path: str, db_connection_string: str, mapping: dict, database_table: str,
                                schema: str):
@@ -109,21 +113,25 @@ class csv_to_postgres:
         primary_key = ''
         in_progress = True
         print('You will be prompted to enter columns and their data types')
+        print('Current supported data types are integer and string')
         while in_progress:
-            print('Current supported data types are integer and string. Enter i for integer and s for string')
             column_name = input('Enter column name: ')
-            column_data_type = input('Enter column datatype. i for integer or s for string')
+            column_data_type = input('Enter column datatype. i for integer or s for string: ')
             column_data_type_transformed = String if column_data_type == 's' else Integer
+            column_data_type_transformed_str = 'String' if column_data_type == 's' else 'Integer'
             if not primary_key_found:
-                primary_key = input('Is this column a primary key? Enter y for yes anything else for no ')
+                primary_key = input('Is this column a primary key? Enter y for yes anything else for no: ')
                 primary_key = column_name if primary_key == 'y' else ''
                 primary_key_found = True
-            valid_column = (f'Are you happy with column: {column_name}: {column_data_type_transformed}?'
-                            f'enter y for yes anything else for no: ')
+            valid_column = input(f'Are you happy with column: {column_name}: {column_data_type_transformed_str}?'
+                                 f' Enter y for yes anything else for no: ')
             if valid_column.strip() == 'Y' or valid_column.strip() == 'y':
                 columns_dict[column_name] = column_data_type_transformed
             else:
                 print('The column entered will be disregarded')
+                if primary_key == column_name:
+                    primary_key = ''
+                    primary_key_found = False
             user_done = input('Are you done? Enter y for yes and anything else for no: ')
             if (user_done == 'y' and primary_key_found) or (user_done == 'Y' and primary_key_found):
                 in_progress = False
@@ -135,7 +143,6 @@ class csv_to_postgres:
 
     def create_dynamic_class(self, table_name: str, columns: dict, schema, primary_key):
         attributes = {'__tablename__': table_name}
-
         # Define the columns dynamically
         for column_name, column_type in columns.items():
             attributes[column_name] = Column(column_type, primary_key=True if primary_key == column_name else False)
@@ -145,11 +152,10 @@ class csv_to_postgres:
             attributes['__table_args__'] = {'schema': schema}
 
         # Create the class using type
-        dynamic_class = type(table_name.capitalize(), (DeclarativeBase,), attributes)
+        dynamic_class = type(table_name.capitalize(), (Base,), attributes)
 
         return dynamic_class
 
-    # Untested
     def csv_to_postgres_update_one_column(self, csv_file_path: str, db_connection_string: str, database_table: str,
                                           schema: str):
         engine = create_engine(db_connection_string)
@@ -163,6 +169,8 @@ class csv_to_postgres:
         df = pd.read_csv(csv_file_path)
         column_to_be_searched = df.columns[0]
         column_to_update = df.columns[1]
+        search_column_column_element = getattr(TableModel, column_to_be_searched)
+        update_column_column_element = getattr(TableModel, column_to_update)
         update_dict = {}
         for index, row in df.iterrows():
             to_be_updated = row[column_to_be_searched]
@@ -176,9 +184,10 @@ class csv_to_postgres:
                 print(f'On record {count}')
                 try:
                     conn.execute(
-                        update(TableModel).where(TableModel.column_to_be_searched == search)
-                        .values(column_to_update= value))
+                        update(TableModel)
+                        .where(search_column_column_element == search)
+                        .values({update_column_column_element: value}))
                     conn.commit()
                 except Exception as e:
-                    print(f'Record {column_to_be_searched} {search} could not be updated due to error {e}')
+                    print(f'Record {search} could not be updated due to error {e}')
         print('Update is done')
